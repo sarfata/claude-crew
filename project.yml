@@ -1,0 +1,42 @@
+name: ClaudeCrew
+options:
+  bundleIdPrefix: com.claudecrew
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "16.0"
+  generateEmptyDirectories: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+targets:
+  ClaudeCrew:
+    type: application
+    platform: macOS
+    sources:
+      - ClaudeCrew
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.claudecrew.app
+        PRODUCT_NAME: Claude Crew
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: 1
+        INFOPLIST_FILE: ClaudeCrew/Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: ClaudeCrew/Resources/ClaudeCrew.entitlements
+        SWIFT_STRICT_CONCURRENCY: complete
+        CODE_SIGN_IDENTITY: "-"
+        ENABLE_HARDENED_RUNTIME: true
+  ClaudeCrewTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - ClaudeCrewTests
+    dependencies:
+      - target: ClaudeCrew
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.claudecrew.tests
+        SWIFT_STRICT_CONCURRENCY: complete
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Claude Crew.app/Contents/MacOS/Claude Crew"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        GENERATE_INFOPLIST_FILE: true
