@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Luigi the Linux Plumber - Session Replay</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Inter",sans-serif;background:#0d1117;color:#c9d1d9;min-height:100vh}
+  .header{background:#161b22;border-bottom:1px solid #30363d;padding:16px 24px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:10}
+  .header h1{font-size:1.1rem;font-weight:600}
+  .badge{font-size:0.7rem;font-weight:600;padding:2px 10px;border-radius:12px;background:#6e7681;color:#fff}
+  .badge.running{background:#d29922} .badge.done{background:#238636}
+  .controls{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .controls button{background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:6px 16px;border-radius:6px;cursor:pointer;font-size:0.8rem}
+  .controls button:hover{background:#30363d}
+  .controls button.primary{background:#238636;border-color:#238636;color:#fff}
+  .speed-label{font-size:0.75rem;color:#6e7681}
+  .container{max-width:900px;margin:0 auto;padding:24px}
+  .event{opacity:0;transform:translateY(8px);transition:opacity 0.3s,transform 0.3s;margin-bottom:8px}
+  .event.visible{opacity:1;transform:translateY(0)}
+  .event-row{display:flex;gap:10px;align-items:flex-start;padding:8px 12px;border-radius:8px}
+  .event-icon{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;flex-shrink:0;margin-top:2px}
+  .event-body{flex:1;min-width:0}
+  .event-type{font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px}
+  .event-text{font-size:0.85rem;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  .event-detail{font-family:"JetBrains Mono",monospace;font-size:0.75rem;color:#8b949e;margin-top:4px;padding:6px 10px;background:#0d1117;border-radius:4px;white-space:pre-wrap;word-break:break-all}
+  .msg{background:rgba(136,87,255,0.06)} .msg .event-icon{background:rgba(136,87,255,0.15);color:#a371f7} .msg .event-type{color:#a371f7}
+  .tool{background:rgba(56,139,253,0.06)} .tool .event-icon{background:rgba(56,139,253,0.15);color:#58a6ff} .tool .event-type{color:#58a6ff}
+  .result .event-icon{background:rgba(63,185,80,0.15);color:#3fb950} .result .event-type{color:#3fb950}
+  .result .event-text{font-family:"JetBrains Mono",monospace;font-size:0.75rem;color:#8b949e;max-height:200px;overflow-y:auto}
+  .status .event-type{color:#6e7681;font-size:0.65rem;text-align:center}
+  .counter{position:fixed;bottom:16px;right:24px;font-size:0.75rem;color:#6e7681;background:#161b22;padding:4px 12px;border-radius:12px;border:1px solid #30363d}
+</style>
+</head>
+<body>
+<div class="header">
+  <span style="font-size:1.5rem">&#x1F527;</span>
+  <h1>Luigi the Linux Plumber</h1>
+  <span class="badge" id="status-badge">Idle</span>
+  <span style="font-size:0.75rem;color:#6e7681">Reviewing pi-blaster issues</span>
+  <div class="controls">
+    <span class="speed-label">Speed:</span>
+    <button onclick="setSpeed(0.5)">0.5x</button>
+    <button onclick="setSpeed(1)" class="primary">1x</button>
+    <button onclick="setSpeed(3)">3x</button>
+    <button onclick="setSpeed(10)">10x</button>
+    <button onclick="replay()" style="margin-left:8px">&#x21BB; Replay</button>
+  </div>
+</div>
+<div class="container" id="events"></div>
+<div class="counter" id="counter">0 / 0</div>
+<script>
+const EVENTS = [{"type": "status_running"}, {"type": "user"}, {"type": "model_request_start"}, {"type": "agent"}, {"type": "agent", "text": "Mama mia, let's get those pipes flowing! I'll clone the repo and check the issues at the same time! \ud83d\udd27"}, {"type": "agent_tool_use", "tool": "bash", "detail": "git clone https://github.com/sarfata/pi-blaster/ /tmp/pi-blaster 2>&1"}, {"type": "agent_tool_use", "tool": "web_fetch", "detail": "https://api.github.com/repos/sarfata/pi-blaster/issues?state=open&per_page=30"}, {"type": "model_request_end"}, {"type": "agent_tool_result", "text": "Cloning into '/tmp/pi-blaster'...\n", "is_error": false}, {"type": "agent_tool_result", "is_error": false}, {"type": "model_request_start"}, {"type": "agent"}, {"type": "agent", "text": "Now let me read the README and explore the codebase!"}, {"type": "agent_tool_use", "tool": "read", "detail": "/tmp/pi-blaster/README.md"}, {"type": "agent_tool_use", "tool": "bash", "detail": "ls /tmp/pi-blaster/ && wc -l /tmp/pi-blaster/pi-blaster.c"}, {"type": "model_request_end"}, {"type": "agent_tool_result", "text": "1\tpi-blaster\n2\t==========\n3\t\n4\tThis project enables PWM on the GPIO pins you request of a Raspberry Pi. The\n5\ttechnique used is extremely efficient: does not use the CPU and gives very\n6\tstable pulses.\n7\t\n8\tPi-blaster project is based on the excellent work of Richard Hirst for\n9\t[ServoBlaster](https://github.com/richardghirst/PiBits).\n10\t\n11\tPi-blaster has also been forked and made to work with MQTT instead of a local device file.  That project is available [here](https://github.com/gherlein/pi-", "is_error": false}, {"type": "agent_tool_result", "text": "Dockerfile\nMakefile.am\nREADME.md\nautogen.sh\nconfigure.ac\ndebian\nmailbox.c\nmailbox.h\npi-blaster.boot.sh\npi-blaster.c\npi-blaster.service\npinout.xyz.png\n1109 /tmp/pi-blaster/pi-blaster.c\n", "is_error": false}, {"type": "model_request_start"}, {"type": "agent"}, {"type": "agent", "text": "Let me read the main source file to understand the codebase!"}, {"type": "agent_tool_use", "tool": "read", "detail": "/tmp/pi-blaster/pi-blaster.c"}, {"type": "model_request_end"}, {"type": "agent_tool_result", "text": "1\t/*\n2\t * pi-blaster.c Multiple PWM for the Raspberry Pi\n3\t * Copyright (c) 2013 Thomas Sarlandie <thomas@sarlandie.net>\n4\t *\n5\t * Based on the most excellent servod.c by Richard Hirst\n6\t * Copyright (c) 2013 Richard Hirst <richardghirst@gmail.com>\n7\t *\n8\t * This program provides very similar functionality to servoblaster, except\n9\t * that rather than implementing it as a kernel module, servod implements\n10\t * the functionality as a usr space daemon.\n11\t *\n12\t */\n13\t/*\n14\t * Permission is hereby", "is_error": false}, {"type": "model_request_start"}, {"type": "agent"}, {"type": "agent", "text": "Now let me look at the key parts of the source more closely before picking my issue!"}, {"type": "agent_tool_use", "tool": "read", "detail": "/tmp/pi-blaster/pi-blaster.c"}, {"type": "agent_tool_use", "tool": "read", "detail": "/tmp/pi-blaster/pi-blaster.c"}, {"type": "model_request_end"}, {"type": "agent_tool_result", "text": "62\t// and the maximum number of channels\n63\t#define MAX_CHANNELS\t32\n64\t\n65\t// Create default known_pins with raspberry pi list of pins\n66\t// to compare against the param received.\n67\tstatic uint8_t known_pins[MAX_CHANNELS] = {\n68\t    4,      // P1-7\n69\t    17,     // P1-11\n70\t    18,     // P1-12\n71\t    27,     // P1-13\n72\t    21,     // P1-40\n73\t    22,     // P1-15\n74\t    23,     // P1-16\n75\t    24,     // P1-18\n76\t    25,     // P1-22\n77\t};\n78\t\n79\t// Create a list of reserved GPIO pins\n80\t// ", "is_error": false}, {"type": "agent_tool_result", "text": "320\t\n321\tstatic void gpio_set(int pin, int level) {\n322\t  if (level)\n323\t    gpio_reg[GPIO_SET0] = 1 << pin;\n324\t  else\n325\t    gpio_reg[GPIO_CLR0] = 1 << pin;\n326\t}\n327\t\n328\tstatic void udelay(int us) {\n329\t  struct timespec ts = { 0, us * 1000 };\n330\t\n", "is_error": false}, {"type": "model_request_start"}, {"type": "agent"}, {"type": "agent", "text": "Mama mia, what a codebase! Now I've got the full picture. Let me make my pick and explain it!\n\n---\n\n## \ud83d\udd27 Issue Chosen: **#66 \u2014 \"Support GPIO pins above 31\"** (also affects #122, #114 crashers on Compute Modules)\n\n**Why this one?**\n\nIt's the repo owner's own bug report, it's a clear, demonstrable C code bug (not a \"works on my hardware\" mystery), and it affects multiple downstream issues. Here's exactly what's broken:\n\n| Location | Bug |\n|---|---|\n| `gpio_set()` | Uses `1 << pin` \u2014 **undefined behaviour in C** for `pin >= 32` (shifting a 32-bit int by 32+). Also always writes to `GPIO_SET0`/`GPIO_CLR0` (pins 0\u201331 only) |\n| `update_pwm()` | Same `1 << pin2gpio[i]` UB; only builds one 32-bit mask for one GPIO register |\n| `init_ctrl_data()` | Same mask UB; initialises only the lower GPIO bank |\n| `parseargs()` | Hard-rejects any pin `>= MAX_CHANNELS (32)` \u2014 no pins 32\u201353 ever allowed |\n| `is_banned_pin()` | Loops up to `num_channels` instead of the actual `banned_pins[]` array size \u2014 could silently miss banned pins |\n\n**The fix plan:** Add a second GPIO bank (`GPIO_SET1`/`GPIO_CLR1` for pins 32\u201353), a second DMA sample array, and change `NUM_CBS` from `N*2` to `N*3` (GPIO-bank-0-write \u2192 GPIO-bank-1-write \u2192 PWM-pace per time slot). Clean, systematic, no logic restructuring needed.\n\nLet's unclog these pipes! \ud83e\udea0"}, {"type": "agent_tool_use", "tool": "read", "detail": "/tmp/pi-blaster/pi-blaster.c"}, {"type": "model_request_end"}, {"type": "agent_tool_result", "text": "453\t// Check if the pin provided is found in the list of known pins.\n454\tstatic int is_known_pin(int pin) {\n455\t  int found = 0;\n456\t\n457\t  for (int i = 0; i < num_channels; i++) {\n458\t    if (known_pins[i] == pin) {\n459\t      found = 1;\n460\t      break;\n461\t    }\n462\t  }\n463\t  return(found);\n464\t}\n465\t\n466\t// Check if the pin provided is found in the list of BANNED pins.\n467\tstatic int is_banned_pin(int pin) {\n468\t  int found = 0;\n469\t\n470\t  for (int i = 0; i < num_channels; i++) {\n471\t    if (", "is_error": false}, {"type": "model_request_start"}, {"type": "agent"}, {"type": "agent", "text": "Now let me implement all the fixes!"}, {"type": "agent_tool_use", "tool": "edit", "detail": "/tmp/pi-blaster/pi-blaster.c"}, {"type": "model_request_end"}, {"type": "agent_tool_result", "text": "File updated: /tmp/pi-blaster/pi-blaster.c", "is_error": false}, {"type": "model_request_start"}];
+let speed = 1;
+function setSpeed(s){speed=s}
+function getDelay(ev){
+  if(ev.type==="agent")return 1500;
+  if(ev.type==="agent_tool_use")return 800;
+  if(ev.type==="agent_tool_result")return 600;
+  return 300;
+}
+function esc(s){const d=document.createElement("div");d.textContent=s;return d.innerHTML.replace(/\n/g,"<br>")}
+function renderEvent(ev,idx){
+  const div=document.createElement("div");div.className="event";div.id="ev-"+idx;
+  let cls="status",icon="&#x2022;",label=ev.type,body="";
+  if(ev.type==="agent"&&ev.text){cls="msg";icon="&#x2728;";label="Luigi says";body='<div class="event-text">'+esc(ev.text)+'</div>'}
+  else if(ev.type==="agent_tool_use"){cls="tool";icon="&#x1F6E0;";label="Tool: "+(ev.tool||"?");if(ev.detail)body='<div class="event-detail">'+esc(ev.detail)+'</div>'}
+  else if(ev.type==="agent_tool_result"){cls="result";icon="&#x2705;";label="Result";if(ev.text)body='<div class="event-text">'+esc(ev.text)+'</div>'}
+  else if(ev.type==="status_running"){label="&#x1F7E2; Session running";document.getElementById("status-badge").textContent="Running";document.getElementById("status-badge").className="badge running"}
+  else if(ev.type==="status_idle"){label="&#x26AA; Luigi finished!";document.getElementById("status-badge").textContent="Done";document.getElementById("status-badge").className="badge done"}
+  else if(ev.type==="user"){cls="msg";icon="&#x1F464;";label="Task sent to Luigi"}
+  div.innerHTML='<div class="event-row '+cls+'"><div class="event-icon">'+icon+'</div><div class="event-body"><div class="event-type">'+label+'</div>'+body+'</div></div>';
+  return div;
+}
+async function replay(){
+  const c=document.getElementById("events");c.innerHTML="";
+  document.getElementById("status-badge").textContent="Idle";document.getElementById("status-badge").className="badge";
+  let shown=0;
+  for(let i=0;i<EVENTS.length;i++){
+    const ev=EVENTS[i];
+    if(ev.type==="model_request_start"||ev.type==="model_request_end")continue;
+    const el=renderEvent(ev,i);c.appendChild(el);
+    await new Promise(r=>setTimeout(r,50));
+    el.classList.add("visible");el.scrollIntoView({behavior:"smooth",block:"end"});
+    shown++;document.getElementById("counter").textContent=shown+" / "+EVENTS.length+" events";
+    await new Promise(r=>setTimeout(r,getDelay(ev)/speed));
+  }
+}
+window.addEventListener("load",()=>{document.getElementById("counter").textContent="0 / "+EVENTS.length;setTimeout(replay,500)});
+</script>
+</body>
+</html>
