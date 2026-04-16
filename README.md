@@ -58,28 +58,6 @@ Skip Keychain prompts during development:
 export ANTHROPIC_API_KEY="sk-ant-..."
 ```
 
-## Demo: Luigi the Linux Plumber
-
-`demo-luigi.sh` showcases the full managed agents workflow. It creates "Luigi the Linux Plumber" — a Sonnet-powered agent that clones [pi-blaster](https://github.com/sarfata/pi-blaster/), reviews all open GitHub issues, picks one to fix, and implements the change.
-
-<details>
-<summary><b>Luigi's session in Claude Crew</b> (click to expand)</summary>
-
-The agent is running and streaming events in real time:
-
-<img src="screenshots/s03-session-events.png" alt="Luigi working on pi-blaster" width="800">
-
-Luigi chose **Issue #112** — DMA Channel hardcoded + a hidden `is_banned_pin` bug. He analyzed the codebase, identified the root causes, and implemented fixes using `edit` and `bash` tools. The session shows each tool call, result, and message as it happens.
-
-</details>
-
-```bash
-export ANTHROPIC_API_KEY="sk-ant-..."
-bash demo-luigi.sh
-```
-
-Open `demo-replay.html` in a browser for an animated replay of the session with speed controls.
-
 ## Tests
 
 ```bash
