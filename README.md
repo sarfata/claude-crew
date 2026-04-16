@@ -2,7 +2,7 @@
 
 A native macOS app for managing [Claude Managed Agents](https://platform.claude.com/docs/en/managed-agents/quickstart). Create agents, configure environments, start sessions, and watch them work — all from a native SwiftUI interface.
 
-https://github.com/sarfata/claude-crew/raw/main/demo.mp4
+https://github.com/user-attachments/assets/6eef3896-8a39-42c8-922f-91f9eec717e8
 
 <details>
 <summary>Screenshots</summary>
