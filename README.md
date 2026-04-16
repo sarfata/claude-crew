@@ -2,9 +2,7 @@
 
 A native macOS app for managing [Claude Managed Agents](https://platform.claude.com/docs/en/managed-agents/quickstart). Create agents, configure environments, start sessions, and watch them work — all from a native SwiftUI interface.
 
-<video src="https://github.com/sarfata/claude-crew/raw/main/demo.mp4" autoplay loop muted playsinline width="100%"></video>
-
-<sub>Scout reviews pi-blaster: sessions list → session events → agent config (4x speed)</sub>
+https://github.com/sarfata/claude-crew/raw/main/demo.mp4
 
 <details>
 <summary>Screenshots</summary>
